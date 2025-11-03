@@ -1,0 +1,62 @@
+# 可执行文件
+*.exe
+*.out
+*.app
+
+# 目标文件
+*.o
+*.obj
+*.class
+
+# 中间文件
+*.gch
+*.pch
+*.ilk
+*.pdb
+*.exp
+*.lib
+*.so
+*.dylib
+
+# 构建目录
+/build
+/bin
+/obj
+/cmake-build-*
+/out
+
+# IDE 配置文件
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*.swo
+*.swn
+*.swp
+
+# 临时文件
+*.tmp
+*.temp
+*.log
+.cache
+
+# 环境变量文件
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# 操作系统文件
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+
+
+# 文档
+*.pdf
