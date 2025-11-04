@@ -51,9 +51,9 @@
 
 1. PuzzleState类
 
-表示一个N-puzzle状态, 包含当前的tiles数组和空位置索引emptyIndex。
+表示一个N-puzzle状态, 包含当前tiles数组(一位的n * n)
 
-2. ProblemLoader类
+1. ProblemLoader类
 
 加载problem.txt文件, 解析出初始状态和目标状态。
 
@@ -62,3 +62,5 @@
 加载solution.txt文件, 解析出搜索过程中的状态序列。 
 
 难点是根据当前状态生成, **解析当前状态的父节点**
+
+想想，在solution.txt中，给每行输出加一行输出为当前状态的父节点索引最简单， 因此在解析solution.txt时， 直接解析出父节点索引即可。

@@ -1,4 +1,8 @@
-#include "Core/PuzzleState.h"
+#pragma once
+
+#include "../Core/PuzzleState.h"
+
+// 文件格式 size start_state goal_state
 
 struct ProblemData
 {
