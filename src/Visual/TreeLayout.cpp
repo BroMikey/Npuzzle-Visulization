@@ -1,45 +1,96 @@
 #include "TreeLayout.h"
 #include <algorithm>
 #include <cmath>
+#include <limits>
 
 TreeLayout::TreeLayout()
-    : m_solution(nullptr), m_horizontalSpacing(200.0f), m_verticalSpacing(150.0f), m_position(0, 0)
+    : m_tree(nullptr), m_horizontalSpacing(200.0f), m_verticalSpacing(150.0f),
+      m_nodeWidth(80.0f), m_nodeHeight(80.0f), m_position(0, 0)
 {
 }
 
-void TreeLayout::setSolution(const Solution &solution)
+void TreeLayout::setTree(Tree *tree)
 {
-    m_solution = &solution;
-
-    // 为每个状态创建BoardRenderer
-    m_boardRenderers.clear();
-    for (size_t i = 0; i < solution.size(); ++i)
+    m_tree = tree;
+    if (m_tree)
     {
-        auto renderer = std::make_unique<BoardRenderer>();
-
-        // 获取棋盘大小
-        const auto &state = solution.getState(i);
-        int boardSize = static_cast<int>(std::sqrt(state.size()));
-        renderer->setBoardSize(boardSize, 80.0f);
-
-        // 设置数值
-        renderer->setValues(solution.getG(i), solution.getH(i), solution.getF(i));
-
-        m_boardRenderers.push_back(std::move(renderer));
+        // 初始化节点位置列表和算法数据结构
+        int nodeCount = m_tree->size();
+        m_nodePositions.resize(nodeCount);
+        m_mod.resize(nodeCount, 0.0f);
+        m_prelim.resize(nodeCount, 0.0f);
+        m_shift.resize(nodeCount, 0.0f);
+        m_change.resize(nodeCount, 0.0f);
+        m_thread.resize(nodeCount, -1);
+        m_ancestor.resize(nodeCount, -1);
     }
-
-    // 计算节点位置
-    calculateNodePositions();
 }
 
-void TreeLayout::setLayoutParameters(float horizontalSpacing, float verticalSpacing)
+void TreeLayout::setLayoutParameters(float horizontalSpacing, float verticalSpacing,
+                                     float nodeWidth, float nodeHeight)
 {
     m_horizontalSpacing = horizontalSpacing;
     m_verticalSpacing = verticalSpacing;
-    if (m_solution)
+    m_nodeWidth = nodeWidth;
+    m_nodeHeight = nodeHeight;
+}
+
+void TreeLayout::calculateLayout()
+{
+    if (!m_tree || !m_tree->getRoot())
     {
-        calculateNodePositions();
+        return;
     }
+
+    // 重置节点位置
+    std::fill(m_nodePositions.begin(), m_nodePositions.end(), sf::Vector2f(0, 0));
+    std::fill(m_mod.begin(), m_mod.end(), 0.0f);
+    std::fill(m_prelim.begin(), m_prelim.end(), 0.0f);
+    std::fill(m_shift.begin(), m_shift.end(), 0.0f);
+    std::fill(m_change.begin(), m_change.end(), 0.0f);
+    std::fill(m_thread.begin(), m_thread.end(), -1);
+    std::fill(m_ancestor.begin(), m_ancestor.end(), -1);
+
+    // 执行Reingold-Tilford算法
+    executeReingoldTilford();
+}
+
+sf::Vector2f TreeLayout::getNodePosition(int nodeIndex) const
+{
+    if (nodeIndex >= 0 && nodeIndex < static_cast<int>(m_nodePositions.size()))
+    {
+        return m_nodePositions[nodeIndex];
+    }
+    return sf::Vector2f(0, 0);
+}
+
+const std::vector<sf::Vector2f> &TreeLayout::getAllNodePositions() const
+{
+    return m_nodePositions;
+}
+
+sf::Vector2f TreeLayout::getTotalSize() const
+{
+    if (m_nodePositions.empty())
+    {
+        return sf::Vector2f(0, 0);
+    }
+
+    float minX = std::numeric_limits<float>::max();
+    float maxX = std::numeric_limits<float>::lowest();
+    float maxY = std::numeric_limits<float>::lowest();
+
+    for (const auto &pos : m_nodePositions)
+    {
+        if (pos.x < minX)
+            minX = pos.x;
+        if (pos.x > maxX)
+            maxX = pos.x;
+        if (pos.y > maxY)
+            maxY = pos.y;
+    }
+
+    return sf::Vector2f(maxX - minX + m_nodeWidth, maxY + m_nodeHeight);
 }
 
 void TreeLayout::setPosition(float x, float y)
@@ -47,201 +98,253 @@ void TreeLayout::setPosition(float x, float y)
     m_position = sf::Vector2f(x, y);
 }
 
-void TreeLayout::draw(sf::RenderWindow &window)
+void TreeLayout::executeReingoldTilford()
 {
-    if (!m_solution || m_solution->size() == 0)
+    if (!m_tree || !m_tree->getRoot())
         return;
 
-    // 绘制连接线
-    drawConnections(window);
+    // 第一次遍历：计算初步位置
+    firstWalk(m_tree->getRoot(), 0);
 
-    // 绘制所有节点
-    for (size_t i = 0; i < m_solution->size(); ++i)
-    {
-        if (m_boardRenderers[i])
-        {
-            // 设置BoardRenderer的位置
-            m_boardRenderers[i]->setPosition(m_nodePositions[i].x, m_nodePositions[i].y);
-
-            // 绘制棋盘
-            m_boardRenderers[i]->draw(window, m_solution->getState(i));
-        }
-    }
+    // 第二次遍历：计算最终位置
+    secondWalk(m_tree->getRoot(), 0);
 }
 
-sf::Vector2f TreeLayout::getTotalSize() const
+void TreeLayout::firstWalk(TreeNode *node, int level)
 {
-    if (m_nodePositions.empty())
-        return sf::Vector2f(0, 0);
-
-    float maxX = 0, maxY = 0;
-    for (const auto &pos : m_nodePositions)
-    {
-        if (pos.x > maxX)
-            maxX = pos.x;
-        if (pos.y > maxY)
-            maxY = pos.y;
-    }
-
-    // 加上BoardRenderer的大小
-    if (!m_boardRenderers.empty() && m_boardRenderers[0])
-    {
-        auto boardSize = m_boardRenderers[0]->getTotalSize();
-        maxX += boardSize.x;
-        maxY += boardSize.y;
-    }
-
-    return sf::Vector2f(maxX, maxY);
-}
-
-void TreeLayout::calculateNodePositions()
-{
-    if (!m_solution || m_solution->size() == 0)
+    if (!node)
         return;
 
-    m_nodePositions.resize(m_solution->size());
+    TreeNode *leftSibling = getLeftSibling(node);
 
-    // 找到根节点（parent为-1的节点）
-    int rootIndex = -1;
-    for (size_t i = 0; i < m_solution->size(); ++i)
+    if (node->children.empty())
     {
-        if (m_solution->getParent(i) == -1)
+        // 叶子节点
+        if (leftSibling)
         {
-            rootIndex = i;
-            break;
+            m_prelim[node->index] = m_prelim[leftSibling->index] + m_horizontalSpacing + m_nodeWidth;
+        }
+        else
+        {
+            m_prelim[node->index] = 0;
         }
     }
-
-    if (rootIndex == -1)
+    else
     {
-        // 如果没有找到根节点，使用第一个节点作为根
-        rootIndex = 0;
-    }
+        // 内部节点
+        TreeNode *leftmostChild = getLeftmostChild(node);
+        TreeNode *rightmostChild = getRightmostChild(node);
 
-    // 从根节点开始递归计算位置
-    calculateNodePosition(rootIndex, 0, 0, 0);
-}
-
-void TreeLayout::calculateNodePosition(int nodeIndex, float x, float y, int depth)
-{
-    // 设置当前节点的位置
-    m_nodePositions[nodeIndex] = sf::Vector2f(
-        m_position.x + x,
-        m_position.y + y * m_verticalSpacing);
-
-    // 找到所有子节点
-    std::vector<int> children;
-    for (size_t i = 0; i < m_solution->size(); ++i)
-    {
-        if (m_solution->getParent(i) == nodeIndex)
+        // 递归处理子节点
+        for (TreeNode *child : node->children)
         {
-            children.push_back(i);
+            firstWalk(child, level + 1);
         }
-    }
 
-    if (children.empty())
-        return;
+        float midPoint = (m_prelim[leftmostChild->index] + m_prelim[rightmostChild->index]) / 2.0f;
 
-    // 计算子树的宽度
-    float totalWidth = 0;
-    std::vector<float> subtreeWidths;
-    for (int child : children)
-    {
-        float width = calculateSubtreeWidth(child);
-        subtreeWidths.push_back(width);
-        totalWidth += width;
-    }
-
-    // 计算子节点的位置
-    float currentX = x - totalWidth / 2.0f;
-    for (size_t i = 0; i < children.size(); ++i)
-    {
-        int childIndex = children[i];
-        float childWidth = subtreeWidths[i];
-        float childX = currentX + childWidth / 2.0f;
-
-        calculateNodePosition(childIndex, childX, y + 1, depth + 1);
-        currentX += childWidth;
-    }
-}
-
-int TreeLayout::calculateTreeDepth(int nodeIndex) const
-{
-    int maxDepth = 0;
-
-    // 找到所有子节点
-    for (size_t i = 0; i < m_solution->size(); ++i)
-    {
-        if (m_solution->getParent(i) == nodeIndex)
+        if (leftSibling)
         {
-            int childDepth = calculateTreeDepth(i);
-            if (childDepth > maxDepth)
-                maxDepth = childDepth;
-        }
-    }
+            m_prelim[node->index] = m_prelim[leftSibling->index] + m_horizontalSpacing + m_nodeWidth;
+            m_mod[node->index] = m_prelim[node->index] - midPoint;
 
-    return maxDepth + 1;
-}
+            // 检查子树冲突
+            TreeNode *leftContour = leftSibling;
+            TreeNode *rightContour = node;
+            int currentLevel = level + 1;
 
-int TreeLayout::calculateSubtreeWidth(int nodeIndex) const
-{
-    // 找到所有子节点
-    std::vector<int> children;
-    for (size_t i = 0; i < m_solution->size(); ++i)
-    {
-        if (m_solution->getParent(i) == nodeIndex)
-        {
-            children.push_back(i);
-        }
-    }
-
-    if (children.empty())
-        return 1; // 叶子节点宽度为1
-
-    // 子树宽度为所有子节点子树宽度之和
-    int totalWidth = 0;
-    for (int child : children)
-    {
-        totalWidth += calculateSubtreeWidth(child);
-    }
-
-    return std::max(1, totalWidth);
-}
-
-void TreeLayout::drawConnections(sf::RenderWindow &window)
-{
-    if (!m_solution)
-        return;
-
-    // 创建连接线
-    sf::VertexArray lines(sf::Lines, 0);
-
-    for (size_t i = 0; i < m_solution->size(); ++i)
-    {
-        int parentIndex = m_solution->getParent(i);
-        if (parentIndex >= 0 && parentIndex < static_cast<int>(m_solution->size()))
-        {
-            // 获取父节点和当前节点的位置
-            sf::Vector2f parentPos = m_nodePositions[parentIndex];
-            sf::Vector2f currentPos = m_nodePositions[i];
-
-            // 获取BoardRenderer的大小来调整连接点
-            if (m_boardRenderers[parentIndex] && m_boardRenderers[i])
+            while (leftContour && rightContour)
             {
-                auto parentSize = m_boardRenderers[parentIndex]->getTotalSize();
-                auto currentSize = m_boardRenderers[i]->getTotalSize();
+                float leftPos = getRightContour(leftContour, m_mod[leftContour->index], currentLevel);
+                float rightPos = getLeftContour(rightContour, m_mod[rightContour->index], currentLevel);
 
-                // 调整连接点位置，从父节点底部连接到子节点顶部
-                parentPos.y += parentSize.y;
-                currentPos.y -= 10; // 稍微向上偏移，避免重叠
+                if (rightPos - leftPos < m_horizontalSpacing + m_nodeWidth)
+                {
+                    float shift = (m_horizontalSpacing + m_nodeWidth) - (rightPos - leftPos);
+                    m_prelim[node->index] += shift;
+                    m_mod[node->index] += shift;
+                }
+
+                leftContour = nextRight(leftContour);
+                rightContour = nextLeft(rightContour);
+                currentLevel++;
             }
-
-            // 添加连接线
-            lines.append(sf::Vertex(parentPos, sf::Color::White));
-            lines.append(sf::Vertex(currentPos, sf::Color::White));
+        }
+        else
+        {
+            m_prelim[node->index] = midPoint;
         }
     }
+}
 
-    // 绘制所有连接线
-    window.draw(lines);
+void TreeLayout::secondWalk(TreeNode *node, float modSum)
+{
+    if (!node)
+        return;
+
+    // 计算最终位置
+    float x = m_prelim[node->index] + modSum;
+    float y = node->getDepth() * (m_verticalSpacing + m_nodeHeight);
+
+    m_nodePositions[node->index] = sf::Vector2f(
+        m_position.x + x,
+        m_position.y + y);
+
+    // 递归处理子节点
+    for (TreeNode *child : node->children)
+    {
+        secondWalk(child, modSum + m_mod[node->index]);
+    }
+}
+
+TreeNode *TreeLayout::getLeftSibling(TreeNode *node)
+{
+    if (!node || !node->parent)
+        return nullptr;
+
+    auto &children = node->parent->children;
+    auto it = std::find(children.begin(), children.end(), node);
+    if (it != children.begin())
+    {
+        return *(it - 1);
+    }
+    return nullptr;
+}
+
+TreeNode *TreeLayout::getLeftmostChild(TreeNode *node)
+{
+    if (!node || node->children.empty())
+        return nullptr;
+    return node->children.front();
+}
+
+TreeNode *TreeLayout::getRightmostChild(TreeNode *node)
+{
+    if (!node || node->children.empty())
+        return nullptr;
+    return node->children.back();
+}
+
+TreeNode *TreeLayout::nextLeft(TreeNode *node)
+{
+    if (!node)
+        return nullptr;
+
+    if (!node->children.empty())
+    {
+        return node->children.front();
+    }
+    else if (m_thread[node->index] != -1)
+    {
+        return m_tree->getNodeByIndex(m_thread[node->index]);
+    }
+    return nullptr;
+}
+
+TreeNode *TreeLayout::nextRight(TreeNode *node)
+{
+    if (!node)
+        return nullptr;
+
+    if (!node->children.empty())
+    {
+        return node->children.back();
+    }
+    else if (m_thread[node->index] != -1)
+    {
+        return m_tree->getNodeByIndex(m_thread[node->index]);
+    }
+    return nullptr;
+}
+
+void TreeLayout::moveSubtree(TreeNode *node, float shift)
+{
+    if (!node)
+        return;
+
+    m_prelim[node->index] += shift;
+    m_mod[node->index] += shift;
+}
+
+void TreeLayout::executeShifts(TreeNode *node)
+{
+    if (!node)
+        return;
+
+    float shift = 0;
+    float change = 0;
+
+    for (auto it = node->children.rbegin(); it != node->children.rend(); ++it)
+    {
+        TreeNode *child = *it;
+        m_prelim[child->index] += shift;
+        m_mod[child->index] += shift;
+        change += m_change[child->index];
+        shift += m_shift[child->index] + change;
+    }
+}
+
+float TreeLayout::getSubtreeSeparation(TreeNode *leftNode, TreeNode *rightNode)
+{
+    return m_horizontalSpacing + m_nodeWidth;
+}
+
+float TreeLayout::getContourConflict(TreeNode *leftNode, TreeNode *rightNode, float shift)
+{
+    float distance = 0;
+    TreeNode *leftContour = leftNode;
+    TreeNode *rightContour = rightNode;
+    int level = 0;
+
+    while (leftContour && rightContour)
+    {
+        float leftPos = getRightContour(leftContour, m_mod[leftContour->index], level);
+        float rightPos = getLeftContour(rightContour, m_mod[rightContour->index], level);
+
+        distance = std::max(distance, leftPos - rightPos + shift);
+
+        leftContour = nextRight(leftContour);
+        rightContour = nextLeft(rightContour);
+        level++;
+    }
+
+    return distance;
+}
+
+float TreeLayout::getLeftContour(TreeNode *node, float &minMod, int level)
+{
+    if (!node)
+        return std::numeric_limits<float>::lowest();
+
+    float currentMod = m_mod[node->index];
+    minMod = std::min(minMod, currentMod);
+
+    float position = m_prelim[node->index] + currentMod;
+
+    TreeNode *next = nextLeft(node);
+    if (next)
+    {
+        return std::min(position, getLeftContour(next, minMod, level + 1));
+    }
+
+    return position;
+}
+
+float TreeLayout::getRightContour(TreeNode *node, float &maxMod, int level)
+{
+    if (!node)
+        return std::numeric_limits<float>::max();
+
+    float currentMod = m_mod[node->index];
+    maxMod = std::max(maxMod, currentMod);
+
+    float position = m_prelim[node->index] + currentMod;
+
+    TreeNode *next = nextRight(node);
+    if (next)
+    {
+        return std::max(position, getRightContour(next, maxMod, level + 1));
+    }
+
+    return position;
 }
