@@ -12,6 +12,7 @@
 #include "Visual/TreeRenderer.h"
 #include "Visual/CanvasView.h"
 #include "Interaction/InteractionManager.h"
+#include "Interaction/CommandRegistrar.h"
 
 int main()
 {
@@ -56,7 +57,7 @@ int main()
         treeRenderer.setConnectionColor(sf::Color(200, 200, 200)); // 浅灰色连接线
 
         // 5. 初始化SFML窗口和CanvasView
-        sf::RenderWindow window(sf::VideoMode(1600, 1000), "Search Tree Visualization - 支持缩放和平移");
+        sf::RenderWindow window(sf::VideoMode(1600, 1000), "Search Tree Visualization");
         window.setFramerateLimit(60);
 
         // 创建CanvasView
@@ -70,34 +71,11 @@ int main()
         InteractionManager interactionManager;
 
         // 注册交互命令
-        bool showStats = true;
-        interactionManager.registerKeyCommand(sf::Keyboard::Space,
-                                              std::make_unique<FunctionCommand>([&showStats]()
-                                                                                {
-                showStats = !showStats;
-                std::cout << (showStats ? "显示统计信息" : "隐藏统计信息") << std::endl; }));
-
-        interactionManager.registerKeyCommand(sf::Keyboard::H,
-                                              std::make_unique<FunctionCommand>([&tree, &treeRenderer]()
-                                                                                {
-                if (tree->size() > 0)
-                {
-                    std::vector<int> path = tree->getNodeByIndex(tree->size() - 1)->getPathToRoot();
-                    treeRenderer.setHighlightPath(path);
-                    std::cout << "高亮路径: 从根节点到节点 " << (tree->size() - 1) << std::endl;
-                } }));
-
-        interactionManager.registerKeyCommand(sf::Keyboard::C,
-                                              std::make_unique<FunctionCommand>([&treeRenderer]()
-                                                                                {
-                treeRenderer.clearHighlightPath();
-                std::cout << "清除高亮路径" << std::endl; }));
-
-        interactionManager.registerKeyCommand(sf::Keyboard::R,
-                                              std::make_unique<FunctionCommand>([&canvasView]()
-                                                                                {
-                canvasView.reset();
-                std::cout << "重置视图" << std::endl; }));
+        CommandRegistrar::registerDefaultCommands(
+            interactionManager,
+            canvasView,
+            treeRenderer,
+            std::move(tree));
 
         // 6. 渲染循环
         while (window.isOpen())
