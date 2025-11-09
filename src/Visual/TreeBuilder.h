@@ -1,3 +1,14 @@
+/**
+ * @file TreeBuilder.h
+ * @author your name (you@domain.com)
+ * @brief 树构建器，负责从Solution构建树结构
+ * @version 0.1
+ * @date 2025-11-08
+ * 根据solution构建一个TreeNode的树结构
+ * @copyright Copyright (c) 2025
+ *
+ */
+
 #pragma once
 
 #include "../Core/TreeNode.h"

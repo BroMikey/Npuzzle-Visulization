@@ -2,7 +2,7 @@
 #include <algorithm>
 
 TreeRenderer::TreeRenderer()
-    : m_tree(nullptr), m_layout(nullptr), m_connectionColor(sf::Color::White), m_connectionWidth(2.0f)
+    : m_tree(nullptr), m_layout(nullptr), m_displayManager(nullptr), m_connectionColor(sf::Color::White), m_connectionWidth(2.0f)
 {
 }
 
@@ -54,6 +54,16 @@ void TreeRenderer::clearHighlightPath()
     m_highlightPath.clear();
 }
 
+void TreeRenderer::setDisplayManager(DisplayManager *displayManager)
+{
+    m_displayManager = displayManager;
+}
+
+DisplayManager *TreeRenderer::getDisplayManager() const
+{
+    return m_displayManager;
+}
+
 void TreeRenderer::drawConnections(sf::RenderWindow &window)
 {
     if (!m_tree || !m_layout || !m_boardRenderer)
@@ -70,6 +80,16 @@ void TreeRenderer::drawConnections(sf::RenderWindow &window)
         if (!node || node->isRoot())
         {
             continue;
+        }
+
+        // 检查父节点和当前节点是否都可见（如果有显示管理器）
+        if (m_displayManager)
+        {
+            if (!m_displayManager->isNodeVisible(node->parent->index) ||
+                !m_displayManager->isNodeVisible(node->index))
+            {
+                continue;
+            }
         }
 
         // 获取父节点和当前节点的位置
@@ -106,6 +126,12 @@ void TreeRenderer::drawNodes(sf::RenderWindow &window)
     for (TreeNode *node : allNodes)
     {
         if (!node)
+        {
+            continue;
+        }
+
+        // 检查节点是否可见（如果有显示管理器）
+        if (m_displayManager && !m_displayManager->isNodeVisible(node->index))
         {
             continue;
         }
@@ -148,6 +174,16 @@ void TreeRenderer::drawHighlightPath(sf::RenderWindow &window)
         if (!currentNode || !nextNode)
         {
             continue;
+        }
+
+        // 检查当前节点和下一个节点是否都可见（如果有显示管理器）
+        if (m_displayManager)
+        {
+            if (!m_displayManager->isNodeVisible(currentIndex) ||
+                !m_displayManager->isNodeVisible(nextIndex))
+            {
+                continue;
+            }
         }
 
         // 获取节点位置

@@ -11,6 +11,7 @@
 #include "Visual/TreeLayout.h"
 #include "Visual/TreeRenderer.h"
 #include "Visual/CanvasView.h"
+#include "Visual/DisplayManager.h"
 #include "Interaction/InteractionManager.h"
 #include "Interaction/CommandRegistrar.h"
 
@@ -19,14 +20,14 @@ int main()
     try
     {
         // 1. 加载数据
-        auto problem = loadProblem("data/problem.txt");
-        auto solution = loadSolution("data/solution.txt");
+        auto problem = loadProblem("../data/problem.txt");
+        auto solution = loadSolution("../data/solution.txt");
 
         std::cout << "成功加载解决方案，包含 " << solution.size() << " 个状态\n";
 
         // 2. 构建树结构
         TreeBuilder treeBuilder;
-        auto tree = treeBuilder.buildTree(solution);
+        auto tree = treeBuilder.buildTree(solution); // 返回一个智能指针
 
         std::cout << treeBuilder.getBuildStats() << std::endl;
 
@@ -67,6 +68,14 @@ int main()
         auto treeSize = treeLayout.getTotalSize();
         canvasView.setCenter(sf::Vector2f(treeSize.x / 2, treeSize.y / 2));
 
+        // 创建显示管理器
+        DisplayManager displayManager;
+        displayManager.setTotalNodes(tree->size());
+        displayManager.setPlayInterval(sf::milliseconds(500)); // 设置0.5秒间隔
+
+        // 将显示管理器设置到树渲染器
+        treeRenderer.setDisplayManager(&displayManager);
+
         // 创建交互管理器
         InteractionManager interactionManager;
 
@@ -75,11 +84,18 @@ int main()
             interactionManager,
             canvasView,
             treeRenderer,
-            std::move(tree));
+            std::move(tree),
+            &displayManager);
 
         // 6. 渲染循环
+        sf::Clock clock;
         while (window.isOpen())
         {
+            sf::Time deltaTime = clock.restart();
+
+            // 更新显示管理器（用于自动播放）
+            displayManager.updateAutoPlay(deltaTime);
+
             sf::Event event;
             while (window.pollEvent(event))
             {

@@ -3,6 +3,7 @@
 #include "InteractionManager.h"
 #include "../Visual/CanvasView.h"
 #include "../Visual/TreeRenderer.h"
+#include "../Visual/DisplayManager.h"
 #include "../Core/TreeNode.h"
 #include <memory>
 
@@ -12,5 +13,6 @@ namespace CommandRegistrar
         InteractionManager &manager,
         CanvasView &canvasView,
         TreeRenderer &treeRenderer,
-        std::shared_ptr<Tree> tree);
+        std::shared_ptr<Tree> tree,
+        DisplayManager *displayManager = nullptr);
 }

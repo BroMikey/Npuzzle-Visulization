@@ -3,6 +3,7 @@
 #include "../Core/TreeNode.h"
 #include "TreeLayout.h"
 #include "BoardRenderer.h"
+#include "DisplayManager.h"
 #include <SFML/Graphics.hpp>
 #include <vector>
 #include <memory>
@@ -60,10 +61,23 @@ public:
      */
     void clearHighlightPath();
 
+    /**
+     * @brief 设置显示管理器
+     * @param displayManager 显示管理器
+     */
+    void setDisplayManager(DisplayManager *displayManager);
+
+    /**
+     * @brief 获取显示管理器
+     * @return 显示管理器指针
+     */
+    DisplayManager *getDisplayManager() const;
+
 private:
     Tree *m_tree;                                   // 树结构
     TreeLayout *m_layout;                           // 布局信息
     std::unique_ptr<BoardRenderer> m_boardRenderer; // BoardRenderer
+    DisplayManager *m_displayManager;               // 显示管理器
 
     sf::Color m_connectionColor;      // 连接线颜色
     float m_connectionWidth;          // 连接线宽度
