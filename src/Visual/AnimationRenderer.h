@@ -102,6 +102,12 @@ private:
      */
     void drawMoveDirection(sf::RenderTarget& target) const;
 
+    /**
+     * @brief 绘制步数计数器
+     * @param target 渲染目标
+     */
+    void drawStepCounter(sf::RenderTarget& target) const;
+
 private:
     const ISolution* m_solution;                    // 解决方案指针
     std::unique_ptr<BoardRenderer> m_boardRenderer; // 棋盘渲染器

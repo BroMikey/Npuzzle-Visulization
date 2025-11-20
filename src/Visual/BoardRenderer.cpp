@@ -3,7 +3,7 @@
 #include <iostream>
 
 BoardRenderer::BoardRenderer()
-    : m_boardSize(3), m_cellSize(80.0f), m_position(0, 0), m_gValue(0), m_hValue(0), m_fValue(0), m_showValuePanel(false)
+    : m_boardSize(3), m_cellSize(80.0f), m_position(0, 0), m_gValue(0), m_hValue(0), m_fValue(0), m_showValuePanel(false), m_highlightBorder(false)
 {
 }
 
@@ -34,6 +34,11 @@ void BoardRenderer::setShowValuePanel(bool show)
     m_showValuePanel = show;
 }
 
+void BoardRenderer::setHighlightBorder(bool highlight)
+{
+    m_highlightBorder = highlight;
+}
+
 void BoardRenderer::draw(sf::RenderWindow &window, const PuzzleState &state) const
 {
     // 绘制棋盘网格
@@ -54,6 +59,12 @@ void BoardRenderer::draw(sf::RenderWindow &window, const PuzzleState &state) con
     {
         drawValuePanel(window);
     }
+
+    // 如果启用了高亮边框，绘制边框
+    if (m_highlightBorder)
+    {
+        drawHighlightBorder(window);
+    }
 }
 
 void BoardRenderer::drawCell(sf::RenderWindow &window, int value, int row, int col) const
@@ -66,14 +77,22 @@ void BoardRenderer::drawCell(sf::RenderWindow &window, int value, int row, int c
     sf::RectangleShape cell(sf::Vector2f(m_cellSize - 2, m_cellSize - 2));
     cell.setPosition(x + 1, y + 1);
 
-    // 根据值设置颜色：0表示空格（灰色），其他数字为白色
+    // 根据值设置颜色：0表示空格（灰色），其他数字根据高亮状态设置颜色
     if (value == 0)
     {
         cell.setFillColor(sf::Color(200, 200, 200)); // 灰色
     }
     else
     {
-        cell.setFillColor(sf::Color::White);
+        if (m_highlightBorder)
+        {
+            // 高亮状态下使用浅黄色背景
+            cell.setFillColor(sf::Color(255, 255, 200)); // 浅黄色
+        }
+        else
+        {
+            cell.setFillColor(sf::Color::White);
+        }
     }
     cell.setOutlineColor(sf::Color::Black);
     cell.setOutlineThickness(1.0f);
@@ -170,6 +189,22 @@ void BoardRenderer::drawText(sf::RenderWindow &window, const std::string &text, 
     sfText.setPosition(x, y);
 
     window.draw(sfText);
+}
+
+void BoardRenderer::drawHighlightBorder(sf::RenderWindow &window) const
+{
+    // 计算棋盘的总尺寸
+    float boardWidth = m_boardSize * m_cellSize;
+    float boardHeight = boardWidth;
+    
+    // 创建高亮边框
+    sf::RectangleShape border(sf::Vector2f(boardWidth, boardHeight));
+    border.setPosition(m_position.x, m_position.y);
+    border.setFillColor(sf::Color::Transparent);
+    border.setOutlineColor(sf::Color::Yellow); // 使用黄色高亮
+    border.setOutlineThickness(3.0f); // 较粗的边框
+    
+    window.draw(border);
 }
 
 sf::Vector2f BoardRenderer::getTotalSize() const

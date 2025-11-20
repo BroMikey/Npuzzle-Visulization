@@ -158,6 +158,9 @@ void AnimationRenderer::draw(sf::RenderTarget& target) const
     {
         drawMoveDirection(target);
     }
+
+    // 绘制步数显示
+    drawStepCounter(target);
 }
 
 sf::Vector2f AnimationRenderer::getCurrentNodePosition() const
@@ -281,4 +284,35 @@ void AnimationRenderer::drawMoveDirection(sf::RenderTarget& target) const
     );
     
     target.draw(directionText);
+}
+
+void AnimationRenderer::drawStepCounter(sf::RenderTarget& target) const
+{
+    if (!m_fontLoaded || !m_solution)
+        return;
+
+    // 创建步数文本
+    std::string stepText = "STEP " + std::to_string(m_currentStep + 1) + " / " + std::to_string(m_solution->size());
+    sf::Text stepCounterText(stepText, m_font, 20);
+    stepCounterText.setFillColor(sf::Color::Cyan);
+    stepCounterText.setStyle(sf::Text::Bold);
+
+    // 固定显示在当前Puzzle的下方
+    sf::Vector2f textPosition = m_currentPosition;
+
+    // 根据BoardRenderer的大小调整位置，确保在Puzzle下方
+    if (m_boardRenderer) {
+        sf::Vector2f boardSize = m_boardRenderer->getTotalSize();
+        // 将文本放在Puzzle下方，距离Puzzle底部一定距离
+        textPosition.y += boardSize.y + 30.0f; // 固定在下方30像素位置
+        textPosition.x += boardSize.x / 2; // 水平居中
+    }
+
+    sf::FloatRect textBounds = stepCounterText.getLocalBounds();
+    stepCounterText.setPosition(
+        textPosition.x - textBounds.width / 2,
+        textPosition.y - textBounds.height / 2
+    );
+
+    target.draw(stepCounterText);
 }

@@ -123,6 +123,11 @@ void TreeRenderer::drawNodes(sf::RenderWindow &window)
     }
 
     const auto &allNodes = m_tree->getAllNodes();
+    
+    // 分离高亮节点和非高亮节点
+    std::vector<TreeNode*> normalNodes;
+    std::vector<TreeNode*> highlightNodes;
+
     for (TreeNode *node : allNodes)
     {
         if (!node)
@@ -136,6 +141,20 @@ void TreeRenderer::drawNodes(sf::RenderWindow &window)
             continue;
         }
 
+        // 判断节点是否在高亮路径中
+        if (isNodeInHighlightPath(node->index))
+        {
+            highlightNodes.push_back(node);
+        }
+        else
+        {
+            normalNodes.push_back(node);
+        }
+    }
+
+    // 先绘制非高亮节点
+    for (TreeNode *node : normalNodes)
+    {
         // 获取节点位置
         sf::Vector2f position = m_layout->getNodePosition(node->index);
 
@@ -147,6 +166,28 @@ void TreeRenderer::drawNodes(sf::RenderWindow &window)
 
         // 设置数值显示
         m_boardRenderer->setValues(node->g, node->h, node->f);
+    }
+
+    // 最后绘制高亮节点（确保在最前方）
+    for (TreeNode *node : highlightNodes)
+    {
+        // 获取节点位置
+        sf::Vector2f position = m_layout->getNodePosition(node->index);
+
+        // 设置BoardRenderer的位置
+        m_boardRenderer->setPosition(position.x, position.y);
+
+        // 为高亮节点添加边框
+        m_boardRenderer->setHighlightBorder(true);
+
+        // 绘制棋盘
+        m_boardRenderer->draw(window, node->state);
+
+        // 设置数值显示
+        m_boardRenderer->setValues(node->g, node->h, node->f);
+
+        // 重置边框设置
+        m_boardRenderer->setHighlightBorder(false);
     }
 }
 

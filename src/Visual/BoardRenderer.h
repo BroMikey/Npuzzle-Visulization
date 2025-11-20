@@ -18,6 +18,9 @@ public:
     // 设置是否显示数值面板
     void setShowValuePanel(bool show);
 
+    // 设置是否显示高亮边框
+    void setHighlightBorder(bool highlight);
+
     // 绘制棋盘和数值面板
     void draw(sf::RenderWindow &window, const PuzzleState &state) const;
 
@@ -34,6 +37,7 @@ private:
     int m_hValue;
     int m_fValue;
     bool m_showValuePanel;   // 是否显示数值面板
+    bool m_highlightBorder;  // 是否显示高亮边框
 
     // 绘制单个单元格
     void drawCell(sf::RenderWindow &window, int value, int row, int col) const;
@@ -46,4 +50,7 @@ private:
 
     // 绘制文本
     void drawText(sf::RenderWindow &window, const std::string &text, float x, float y, sf::Color color = sf::Color::White) const;
+
+    // 绘制高亮边框
+    void drawHighlightBorder(sf::RenderWindow &window) const;
 };
