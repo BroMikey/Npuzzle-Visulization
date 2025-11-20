@@ -181,14 +181,13 @@ void CanvasView::handleMouseMoved(const sf::Vector2f &mousePos)
     sf::Vector2f delta = mousePos - m_lastMousePos;
 
     // 应用速度控制：基于缩放级别的速度调整
-    float dragSpeed = std::clamp(DRAG_SPEED_FACTOR / m_zoom, MIN_DRAG_SPEED, MAX_DRAG_SPEED); // 精美的库函数使用
+    float dragSpeed = std::clamp(DRAG_SPEED_FACTOR / m_zoom, MIN_DRAG_SPEED, MAX_DRAG_SPEED);
     delta *= dragSpeed;
 
     // 转换为世界坐标增量 - 修正方向问题
-    // 对于树结构，拖拽应该像移动地图一样：
+    // 对于拖拽，应该像移动地图一样：
     // 鼠标向下移动时，视图向上移动
     // 鼠标向左移动时，视图向右移动
-    // std::cout << "Delta: (" << delta.x << ", " << delta.y << ")\n";
     sf::Vector2f worldDelta = windowToWorld(sf::Vector2f(-delta.x, delta.y)) - windowToWorld(sf::Vector2f(0, 0));
 
     // 更新中心点（修正后的方向：鼠标移动方向与视图移动方向相反）

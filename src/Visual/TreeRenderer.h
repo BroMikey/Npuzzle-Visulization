@@ -73,6 +73,12 @@ public:
      */
     DisplayManager *getDisplayManager() const;
 
+    /**
+     * @brief 获取当前显示的最后一个节点的位置（用于居中显示）
+     * @return 当前节点位置
+     */
+    sf::Vector2f getCurrentNodePosition() const;
+
 private:
     Tree *m_tree;                                   // 树结构
     TreeLayout *m_layout;                           // 布局信息

@@ -7,7 +7,7 @@ TreeBuilder::TreeBuilder()
 {
 }
 
-std::unique_ptr<Tree> TreeBuilder::buildTree(const Solution &solution)
+std::unique_ptr<Tree> TreeBuilder::buildTree(const ISolution &solution)
 {
     // 重置统计信息
     m_totalNodes = 0;
@@ -52,7 +52,7 @@ std::unique_ptr<Tree> TreeBuilder::buildTree(const Solution &solution)
     return tree;
 }
 
-TreeNode *TreeBuilder::buildSubtree(int nodeIndex, const Solution &solution,
+TreeNode *TreeBuilder::buildSubtree(int nodeIndex, const ISolution &solution,
                                     TreeNode *parent, std::vector<TreeNode *> &nodeMap)
 {
     // 如果节点已经创建，直接返回
@@ -130,12 +130,12 @@ void TreeBuilder::collectStatsRecursive(TreeNode *node, int depth)
 std::string TreeBuilder::getBuildStats() const
 {
     std::ostringstream oss;
-    oss << "树结构统计:\n"
-        << "  总节点数: " << m_totalNodes << "\n"
-        << "  最大深度: " << m_maxDepth << "\n"
-        << "  叶子节点: " << m_leafNodes << "\n"
-        << "  内部节点: " << (m_totalNodes - m_leafNodes) << "\n"
-        << "  平均分支因子: " << (m_totalNodes > 1 ? static_cast<float>(m_totalNodes - 1) / (m_totalNodes - m_leafNodes) : 0.0f);
+    oss << "Tree Structure Statistics:\n"
+        << "  Total Nodes: " << m_totalNodes << "\n"
+        << "  Max Depth: " << m_maxDepth << "\n"
+        << "  Leaf Nodes: " << m_leafNodes << "\n"
+        << "  Internal Nodes: " << (m_totalNodes - m_leafNodes) << "\n"
+        << "  Average Branching Factor: " << (m_totalNodes > 1 ? static_cast<float>(m_totalNodes - 1) / (m_totalNodes - m_leafNodes) : 0.0f);
 
     return oss.str();
 }

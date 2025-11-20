@@ -239,3 +239,46 @@ bool TreeRenderer::isNodeInHighlightPath(int nodeIndex) const
 {
     return std::find(m_highlightPath.begin(), m_highlightPath.end(), nodeIndex) != m_highlightPath.end();
 }
+
+sf::Vector2f TreeRenderer::getCurrentNodePosition() const
+{
+    if (!m_tree || !m_layout || !m_displayManager)
+    {
+        return sf::Vector2f(0, 0);
+    }
+
+    // 获取当前显示的最后一个节点
+    const auto& visibleNodes = m_displayManager->getVisibleNodes();
+    if (visibleNodes.empty())
+    {
+        return sf::Vector2f(0, 0);
+    }
+
+    // 找到最大的索引（通常是最后显示的节点）
+    int maxIndex = -1;
+    for (int index : visibleNodes)
+    {
+        if (index > maxIndex)
+        {
+            maxIndex = index;
+        }
+    }
+
+    if (maxIndex == -1)
+    {
+        return sf::Vector2f(0, 0);
+    }
+
+    // 获取该节点的位置
+    sf::Vector2f position = m_layout->getNodePosition(maxIndex);
+    
+    // 调整位置到节点中心
+    if (m_boardRenderer)
+    {
+        sf::Vector2f boardSize = m_boardRenderer->getTotalSize();
+        position.x += boardSize.x / 2;
+        position.y += boardSize.y / 2;
+    }
+
+    return position;
+}

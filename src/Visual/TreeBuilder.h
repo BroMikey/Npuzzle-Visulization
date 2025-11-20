@@ -12,7 +12,7 @@
 #pragma once
 
 #include "../Core/TreeNode.h"
-#include "../Parser/SolutionLoader.h"
+#include "../Parser/Solution.h"
 #include <memory>
 
 /**
@@ -31,7 +31,7 @@ public:
      * @param solution 解决方案数据
      * @return 构建的树结构
      */
-    std::unique_ptr<Tree> buildTree(const Solution &solution);
+    std::unique_ptr<Tree> buildTree(const ISolution &solution);
 
     /**
      * @brief 获取构建统计信息
@@ -52,7 +52,7 @@ private:
      * @param nodeMap 节点映射表
      * @return 构建的节点
      */
-    TreeNode *buildSubtree(int nodeIndex, const Solution &solution,
+    TreeNode *buildSubtree(int nodeIndex, const ISolution &solution,
                            TreeNode *parent, std::vector<TreeNode *> &nodeMap);
 
     /**

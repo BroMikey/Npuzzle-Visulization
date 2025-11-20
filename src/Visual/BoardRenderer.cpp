@@ -3,7 +3,7 @@
 #include <iostream>
 
 BoardRenderer::BoardRenderer()
-    : m_boardSize(3), m_cellSize(80.0f), m_position(0, 0), m_gValue(0), m_hValue(0), m_fValue(0)
+    : m_boardSize(3), m_cellSize(80.0f), m_position(0, 0), m_gValue(0), m_hValue(0), m_fValue(0), m_showValuePanel(false)
 {
 }
 
@@ -29,7 +29,12 @@ void BoardRenderer::setValues(int g, int h, int f)
     m_fValue = f;
 }
 
-void BoardRenderer::draw(sf::RenderWindow &window, const PuzzleState &state)
+void BoardRenderer::setShowValuePanel(bool show)
+{
+    m_showValuePanel = show;
+}
+
+void BoardRenderer::draw(sf::RenderWindow &window, const PuzzleState &state) const
 {
     // 绘制棋盘网格
     for (int i = 0; i < m_boardSize; ++i)
@@ -44,11 +49,14 @@ void BoardRenderer::draw(sf::RenderWindow &window, const PuzzleState &state)
         }
     }
 
-    // 绘制数值面板
-    drawValuePanel(window);
+    // 只在需要时绘制数值面板
+    if (m_showValuePanel)
+    {
+        drawValuePanel(window);
+    }
 }
 
-void BoardRenderer::drawCell(sf::RenderWindow &window, int value, int row, int col)
+void BoardRenderer::drawCell(sf::RenderWindow &window, int value, int row, int col) const
 {
     // 计算单元格位置
     float x = m_position.x + col * m_cellSize;
@@ -79,7 +87,7 @@ void BoardRenderer::drawCell(sf::RenderWindow &window, int value, int row, int c
     }
 }
 
-void BoardRenderer::drawNumber(sf::RenderWindow &window, int number, float x, float y)
+void BoardRenderer::drawNumber(sf::RenderWindow &window, int number, float x, float y) const
 {
     static sf::Font font;
     static bool fontLoaded = false;
@@ -109,7 +117,7 @@ void BoardRenderer::drawNumber(sf::RenderWindow &window, int number, float x, fl
     window.draw(text);
 }
 
-void BoardRenderer::drawValuePanel(sf::RenderWindow &window)
+void BoardRenderer::drawValuePanel(sf::RenderWindow &window) const
 {
     float boardWidth = m_boardSize * m_cellSize;
     float panelHeight = 40.0f;                    // 面板高度
@@ -139,7 +147,7 @@ void BoardRenderer::drawValuePanel(sf::RenderWindow &window)
              m_position.x + 2 * boardWidth / 3, panelY + 10);
 }
 
-void BoardRenderer::drawText(sf::RenderWindow &window, const std::string &text, float x, float y, sf::Color color)
+void BoardRenderer::drawText(sf::RenderWindow &window, const std::string &text, float x, float y, sf::Color color) const
 {
     static sf::Font font;
     static bool fontLoaded = false;

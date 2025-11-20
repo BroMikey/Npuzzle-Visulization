@@ -30,49 +30,58 @@ namespace CommandRegistrar
     {
         static bool showStats = true;
 
-        // S：显示/隐藏统计（原空格键功能移到S键）
+        // S: Show/Hide statistics
         manager.registerKeyCommand(sf::Keyboard::S,
                                    std::make_unique<FunctionCommand>([]() mutable
                                                                      {
                 showStats = !showStats;
-                std::cout << (showStats ? "显示统计信息" : "隐藏统计信息") << std::endl; }));
+                std::cout << (showStats ? "Show statistics" : "Hide statistics") << std::endl; }));
 
-        // 空格：播放/暂停（自动播放模式）
+        // Space: Start/Pause Auto mode
         if (displayManager)
         {
             manager.registerKeyCommand(sf::Keyboard::Space,
                                        std::make_unique<FunctionCommand>([displayManager]()
                                                                          {
-                displayManager->togglePlayPause();
-                auto state = displayManager->getPlayState();
-                auto mode = displayManager->getDisplayMode();
-                std::cout << (state == PlayState::Playing ? "播放" : "暂停") 
-                          << " (" << (mode == DisplayMode::Manual ? "手动模式" : "自动模式") << ")" << std::endl; }));
+                auto currentMode = displayManager->getDisplayMode();
+                auto currentState = displayManager->getPlayState();
+                
+                if (currentMode == DisplayMode::Manual) {
+                    // If in manual mode, switch to auto mode and start playing
+                    displayManager->setDisplayMode(DisplayMode::AutoPlay);
+                    displayManager->setPlayState(PlayState::Playing);
+                    std::cout << "Auto mode started - Playing" << std::endl;
+                } else {
+                    // If already in auto mode, toggle play/pause
+                    displayManager->togglePlayPause();
+                    auto newState = displayManager->getPlayState();
+                    std::cout << (newState == PlayState::Playing ? "Resumed - Playing" : "Paused") << std::endl;
+                } }));
         }
 
-        // 右箭头：下一步（手动模式）
+        // Right Arrow: Next step (Manual mode)
         if (displayManager)
         {
             manager.registerKeyCommand(sf::Keyboard::Right,
                                        std::make_unique<FunctionCommand>([displayManager]()
                                                                          {
                 displayManager->nextStep();
-                std::cout << "下一步 - 已显示 " << displayManager->getVisibleCount() 
-                          << "/" << displayManager->getTotalNodes() << " 个节点" << std::endl; }));
+                std::cout << "Next step - Showing " << displayManager->getVisibleCount() 
+                          << "/" << displayManager->getTotalNodes() << " nodes" << std::endl; }));
         }
 
-        // 左箭头：上一步（手动模式）
+        // Left Arrow: Previous step (Manual mode)
         if (displayManager)
         {
             manager.registerKeyCommand(sf::Keyboard::Left,
                                        std::make_unique<FunctionCommand>([displayManager]()
                                                                          {
                 displayManager->previousStep();
-                std::cout << "上一步 - 已显示 " << displayManager->getVisibleCount() 
-                          << "/" << displayManager->getTotalNodes() << " 个节点" << std::endl; }));
+                std::cout << "Previous step - Showing " << displayManager->getVisibleCount() 
+                          << "/" << displayManager->getTotalNodes() << " nodes" << std::endl; }));
         }
 
-        // A：切换手动/自动模式
+        // A: Toggle Manual/Auto mode
         if (displayManager)
         {
             manager.registerKeyCommand(sf::Keyboard::A,
@@ -81,11 +90,11 @@ namespace CommandRegistrar
                 displayManager->toggleDisplayMode();
                 auto mode = displayManager->getDisplayMode();
                 auto state = displayManager->getPlayState();
-                std::cout << "切换到 " << (mode == DisplayMode::Manual ? "手动模式" : "自动模式")
-                          << " (" << (state == PlayState::Playing ? "播放中" : "暂停") << ")" << std::endl; }));
+                std::cout << "Switched to " << (mode == DisplayMode::Manual ? "Manual" : "Auto")
+                          << " mode (" << (state == PlayState::Playing ? "Playing" : "Paused") << ")" << std::endl; }));
         }
 
-        // H：高亮路径
+        // H: Highlight path
         manager.registerKeyCommand(sf::Keyboard::H,
                                    std::make_unique<FunctionCommand>([tree, &treeRenderer]()
                                                                      {
@@ -93,21 +102,21 @@ namespace CommandRegistrar
                 {
                     auto path = tree->getNodeByIndex(tree->size() - 1)->getPathToRoot();
                     treeRenderer.setHighlightPath(path);
-                    std::cout << "高亮路径: 从根节点到节点 " << (tree->size() - 1) << std::endl;
+                    std::cout << "Highlight path: from root to node " << (tree->size() - 1) << std::endl;
                 } }));
 
-        // C：清除高亮
+        // C: Clear highlight
         manager.registerKeyCommand(sf::Keyboard::C,
                                    std::make_unique<FunctionCommand>([&treeRenderer]()
                                                                      {
                 treeRenderer.clearHighlightPath();
-                std::cout << "清除高亮路径" << std::endl; }));
+                std::cout << "Clear highlight path" << std::endl; }));
 
-        // R：重置视图
+        // R: Reset view
         manager.registerKeyCommand(sf::Keyboard::R,
                                    std::make_unique<FunctionCommand>([&canvasView]()
                                                                      {
                 canvasView.reset();
-                std::cout << "重置视图" << std::endl; }));
+                std::cout << "Reset view" << std::endl; }));
     }
 }

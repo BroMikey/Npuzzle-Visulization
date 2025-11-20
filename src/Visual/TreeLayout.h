@@ -81,6 +81,44 @@ private:
     std::vector<int> m_thread;   // 线程指针
     std::vector<int> m_ancestor; // 祖先节点
 
+    // 稳定布局算法相关
+    float m_nextX;              // 中序遍历当前x位置
+    float m_inorderStep;        // 中序遍历步长
+
+    /**
+     * @brief 执行稳定布局算法
+     */
+    void executeStableLayout();
+
+    /**
+     * @brief 中序遍历分配初步位置
+     * @param node 当前节点
+     */
+    void assignPrelimInorder(TreeNode *node);
+
+    /**
+     * @brief 收集子树轮廓
+     * @param node 当前节点
+     * @param prelim 初步位置数组
+     * @param minAtDepth 每层最小x
+     * @param maxAtDepth 每层最大x
+     * @param depth 当前深度
+     */
+    void collectContours(TreeNode *node, const std::vector<float> &prelim, std::vector<float> &minAtDepth, std::vector<float> &maxAtDepth, int depth);
+
+    /**
+     * @brief 移动子树
+     * @param node 子树根节点
+     * @param shift 移动距离
+     */
+    void shiftSubtree(TreeNode *node, float shift);
+
+    /**
+     * @brief 递归解决冲突
+     * @param node 当前节点
+     */
+    void resolveConflictsRec(TreeNode *node);
+
     /**
      * @brief 执行Reingold-Tilford树布局算法
      */
@@ -137,17 +175,25 @@ private:
 
     /**
      * @brief 移动子树
+     * @param ancestorNode 祖先节点
      * @param node 当前节点
      * @param shift 移动距离
      */
-    void moveSubtree(TreeNode *node, float shift);
+    void moveSubtree(TreeNode *ancestorNode, TreeNode *node, float shift);
 
     /**
      * @brief 执行移动
      * @param node 当前节点
-     * @param shift 移动距离
      */
     void executeShifts(TreeNode *node);
+
+    /**
+     * @brief 获取指定祖先的节点
+     * @param node 当前节点
+     * @param ancestorIndex 祖先索引
+     * @return 具有指定祖先的节点
+     */
+    TreeNode *getAncestor(TreeNode *node, int ancestorIndex);
 
     /**
      * @brief 计算子树分离
@@ -183,4 +229,28 @@ private:
      * @return 右轮廓位置
      */
     float getRightContour(TreeNode *node, float &minMod, int level);
+
+    /**
+     * @brief 计算自适应参数（根据树大小调整节点尺寸和间距）
+     */
+    void calculateAdaptiveParameters();
+
+    /**
+     * @brief 归一化节点位置
+     */
+    void normalizePositions();
+
+    /**
+     * @brief 子树分配算法
+     * @param node 当前节点
+     * @param level 层级
+     */
+    void apportion(TreeNode *node, int level);
+
+    /**
+     * @brief 计算子树大小
+     * @param node 根节点
+     * @return 子树节点数量
+     */
+    int calculateSubtreeSize(TreeNode *node);
 };
