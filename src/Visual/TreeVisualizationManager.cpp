@@ -11,6 +11,11 @@
 #include <cmath>
 #include <iostream>
 
+/**
+ * @brief 构造函数
+ * @param window SFML渲染窗口引用
+ * @param windowSize 窗口大小
+ */
 TreeVisualizationManager::TreeVisualizationManager(sf::RenderWindow& window, const sf::Vector2f& windowSize)
     : window_(window)
     , windowSize_(windowSize)
@@ -19,18 +24,27 @@ TreeVisualizationManager::TreeVisualizationManager(sf::RenderWindow& window, con
     , shouldCenterOnNodeChange_(true) {
 }
 
+/**
+ * @brief 析构函数
+ */
 TreeVisualizationManager::~TreeVisualizationManager() {
 }
 
+/**
+ * @brief 运行树可视化主循环
+ * @param solution 解决方案数据
+ */
 void TreeVisualizationManager::run(const ISolution& solution) {
     initialize(solution);
     
     sf::Clock clock;
     bool shouldReturnToEditor = false;
     
+    // 主循环
     while (window_.isOpen() && !shouldReturnToEditor) {
         sf::Time deltaTime = clock.restart();
         
+        // 处理事件
         sf::Event event;
         while (window_.pollEvent(event)) {
             if (handleEvent(event)) {
@@ -43,6 +57,7 @@ void TreeVisualizationManager::run(const ISolution& solution) {
             break;
         }
         
+        // 更新和绘制
         update(deltaTime);
         
         window_.clear(sf::Color::Black);
@@ -57,9 +72,15 @@ void TreeVisualizationManager::run(const ISolution& solution) {
     window_.setView(window_.getDefaultView());
 }
 
+/**
+ * @brief 处理事件
+ * @param event SFML事件
+ * @return 如果需要返回编辑器返回true，否则返回false
+ */
 bool TreeVisualizationManager::handleEvent(const sf::Event& event) {
     if (!initialized_) return false;
     
+    // 处理窗口关闭事件
     if (event.type == sf::Event::Closed) {
         window_.close();
         return false;
@@ -68,7 +89,7 @@ bool TreeVisualizationManager::handleEvent(const sf::Event& event) {
     // 处理B键返回ProblemEditor
     if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::B) {
         std::cout << "Returning to Problem Editor..." << std::endl;
-        return true; // Return true to indicate need to return to ProblemEditor
+        return true; // 返回true表示需要返回ProblemEditor
     }
     
     // 处理CanvasView事件（缩放和平移）
@@ -85,6 +106,10 @@ bool TreeVisualizationManager::handleEvent(const sf::Event& event) {
     return false;
 }
 
+/**
+ * @brief 更新状态
+ * @param deltaTime 时间增量
+ */
 void TreeVisualizationManager::update(sf::Time deltaTime) {
     if (!initialized_) return;
     
@@ -108,6 +133,9 @@ void TreeVisualizationManager::update(sf::Time deltaTime) {
     }
 }
 
+/**
+ * @brief 绘制树结构
+ */
 void TreeVisualizationManager::draw() {
     if (!initialized_) return;
     
@@ -121,6 +149,10 @@ void TreeVisualizationManager::draw() {
     canvasView_->drawDragIndicator(window_);
 }
 
+/**
+ * @brief 初始化管理器
+ * @param solution 解决方案数据
+ */
 void TreeVisualizationManager::initialize(const ISolution& solution) {
     if (initialized_) return;
     
@@ -131,6 +163,10 @@ void TreeVisualizationManager::initialize(const ISolution& solution) {
     std::cout << "Tree visualization manager initialized\n";
 }
 
+/**
+ * @brief 设置树渲染
+ * @param solution 解决方案数据
+ */
 void TreeVisualizationManager::setupTreeRendering(const ISolution& solution) {
     std::cout << "Entering tree visualization mode\n";
     
@@ -184,6 +220,9 @@ void TreeVisualizationManager::setupTreeRendering(const ISolution& solution) {
     treeRenderer_->setDisplayManager(displayManager_.get());
 }
 
+/**
+ * @brief 设置交互功能
+ */
 void TreeVisualizationManager::setupInteraction() {
     // 创建交互管理器
     interactionManager_ = std::make_unique<InteractionManager>();

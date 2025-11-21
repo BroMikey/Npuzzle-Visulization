@@ -6,6 +6,11 @@
 #include <cmath>
 #include <iostream>
 
+/**
+ * @brief 构造函数
+ * @param window SFML渲染窗口引用
+ * @param windowSize 窗口大小
+ */
 AnimationVisualizationManager::AnimationVisualizationManager(sf::RenderWindow& window, const sf::Vector2f& windowSize)
     : window_(window)
     , windowSize_(windowSize)
@@ -15,18 +20,27 @@ AnimationVisualizationManager::AnimationVisualizationManager(sf::RenderWindow& w
     , autoPlayAccumulator_(sf::Time::Zero) {
 }
 
+/**
+ * @brief 析构函数
+ */
 AnimationVisualizationManager::~AnimationVisualizationManager() {
 }
 
+/**
+ * @brief 运行动画可视化主循环
+ * @param solution 解决方案数据
+ */
 void AnimationVisualizationManager::run(const ISolution& solution) {
     initialize(solution);
     
     sf::Clock clock;
     bool shouldReturnToEditor = false;
     
+    // 主循环
     while (window_.isOpen() && !shouldReturnToEditor) {
         sf::Time deltaTime = clock.restart();
         
+        // 处理事件
         sf::Event event;
         while (window_.pollEvent(event)) {
             if (handleEvent(event)) {
@@ -39,6 +53,7 @@ void AnimationVisualizationManager::run(const ISolution& solution) {
             break;
         }
         
+        // 更新和绘制
         update(deltaTime);
         
         window_.clear(sf::Color::Black);
@@ -53,9 +68,15 @@ void AnimationVisualizationManager::run(const ISolution& solution) {
     window_.setView(window_.getDefaultView());
 }
 
+/**
+ * @brief 处理事件
+ * @param event SFML事件
+ * @return 如果需要返回编辑器返回true，否则返回false
+ */
 bool AnimationVisualizationManager::handleEvent(const sf::Event& event) {
     if (!initialized_) return false;
     
+    // 处理窗口关闭事件
     if (event.type == sf::Event::Closed) {
         window_.close();
         return false;
@@ -76,6 +97,10 @@ bool AnimationVisualizationManager::handleEvent(const sf::Event& event) {
     return false;
 }
 
+/**
+ * @brief 更新状态
+ * @param deltaTime 时间增量
+ */
 void AnimationVisualizationManager::update(sf::Time deltaTime) {
     if (!initialized_) return;
     
@@ -90,6 +115,9 @@ void AnimationVisualizationManager::update(sf::Time deltaTime) {
     canvasView_->setCenter(currentNodePos);
 }
 
+/**
+ * @brief 绘制动画
+ */
 void AnimationVisualizationManager::draw() {
     if (!initialized_) return;
     
@@ -100,6 +128,10 @@ void AnimationVisualizationManager::draw() {
     animationRenderer_->draw(window_);
 }
 
+/**
+ * @brief 初始化管理器
+ * @param solution 解决方案数据
+ */
 void AnimationVisualizationManager::initialize(const ISolution& solution) {
     if (initialized_) return;
     
@@ -110,6 +142,10 @@ void AnimationVisualizationManager::initialize(const ISolution& solution) {
     std::cout << "Animation visualization manager initialized\n";
 }
 
+/**
+ * @brief 设置动画渲染
+ * @param solution 解决方案数据
+ */
 void AnimationVisualizationManager::setupAnimationRendering(const ISolution& solution) {
     std::cout << "Entering animation visualization mode\n";
     
@@ -128,6 +164,9 @@ void AnimationVisualizationManager::setupAnimationRendering(const ISolution& sol
     canvasView_ = std::make_unique<CanvasView>(windowSize_);
 }
 
+/**
+ * @brief 设置交互功能
+ */
 void AnimationVisualizationManager::setupInteraction() {
     // 创建交互管理器
     interactionManager_ = std::make_unique<InteractionManager>();
@@ -163,12 +202,19 @@ void AnimationVisualizationManager::setupInteraction() {
         }));
 }
 
+/**
+ * @brief 切换自动播放状态
+ */
 void AnimationVisualizationManager::toggleAutoPlay() {
     autoPlayEnabled_ = !autoPlayEnabled_;
     autoPlayAccumulator_ = sf::Time::Zero;
     std::cout << "Auto play: " << (autoPlayEnabled_ ? "ON" : "OFF") << std::endl;
 }
 
+/**
+ * @brief 更新自动播放
+ * @param deltaTime 时间增量
+ */
 void AnimationVisualizationManager::updateAutoPlay(sf::Time deltaTime) {
     if (!autoPlayEnabled_) return;
     

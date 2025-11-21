@@ -334,10 +334,13 @@ void ProblemEditor::saveCurrentProblem()
         
         std::string problemLine = problemStream.str();
         
-        // 保存到data/problem.txt文件
+        // 保存到data/problem.txt文件(覆盖原有内容)
         std::ofstream problemFile("problem.txt");
         if (problemFile.is_open())
         {
+            // problemFile << problemLine << std::endl;
+            // problemFile.close();
+            problemFile.clear();
             problemFile << problemLine << std::endl;
             problemFile.close();
             std::cout << "Current problem saved to problem.txt" << std::endl;
